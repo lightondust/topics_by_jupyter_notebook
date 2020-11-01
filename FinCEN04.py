@@ -6,13 +6,13 @@
 
 import plotly.express as px
 import numpy as np
+from sklearn.decomposition import PCA
 import streamlit as st
 
 # In[2]:
 
 
 from neo4j import GraphDatabase
-from tqdm.notebook import tqdm
 import json
 
 import pandas as pd
@@ -20,6 +20,13 @@ import pandas as pd
 
 # In[3]:
 
+
+st.markdown('# transaction count')
+st.markdown('[blog1](https://qiita.com/s_zh/items/b7c7eb7bc2af98b850d7)')
+st.markdown('[blog2](https://qiita.com/s_zh/items/35a4c8c3e99f5f4bd93b)')
+st.markdown('![Qiita](https://qiita-user-contents.imgix.net/https%3A%2F%2Fqiita-image-store.s3.ap-northeast-1.amazonaws.com%2F0%2F239303%2Fc9e22d94-c2b3-0e5f-8fa1-2d2ea01a7eaa.png?ixlib=rb-1.2.2&auto=format&gif-q=60&q=75&s=395649f64baabaf117d461fe6f5dba64 "Qiita")')
+
+st.markdown('# Country2Vec by year')
 
 auth_path = '/home/sen/project/notebooks/topics_by_jupyter_notebook/data/neo4j_graph/auth.json'
 with open(auth_path, 'r') as f:
@@ -84,10 +91,19 @@ vec_texts = {
     2: 'Singapore era: 2012~2014',
     3: 'Latvia era: 2015~'
 }
+
+pca = PCA(n_components=2)
+
 for vec_type_id in range(1, 4):
     vec_type = 'vec{}'.format(vec_type_id)
-    fig_vec = px.scatter(x=country_vecs[vec_type].apply(lambda x: x[0]),
-                         y=country_vecs[vec_type].apply(lambda x: x[1]),
+
+    vec = country_vecs[vec_type].to_list()
+    vec = np.array(vec)
+    vec_renorm = vec / np.sqrt((vec ** 2).sum(axis=1).reshape(-1, 1))
+    vec_pca = pca.fit_transform(vec_renorm)
+
+    fig_vec = px.scatter(x=vec_pca[:, 0],
+                         y=vec_pca[:, 1],
                          text=country_vecs['name'],
                          color=country_vecs['name'].apply(lambda x: {True: 'red', False: 'blue'}[x==country_name]),
                          size=country_vecs['name'].apply(lambda x: {True: 20, False: 5}[x==country_name])
@@ -110,10 +126,4 @@ st.plotly_chart(fig)
 
 transaction_count
 
-
-
 # In[ ]:
-
-
-
-
